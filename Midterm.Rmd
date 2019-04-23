@@ -30,7 +30,7 @@ download_file <- function(year) {
 
 ## Question 1
 
-```{r}
+```{r cache=TRUE}
 # download all the data from the past 4 years
 data <- map_df(15:18, download_file) 
 
@@ -103,7 +103,7 @@ data_es <- map_df(by_school_grade_year, ~mutate(.x, es = gap(.x, ref = "white", 
 ## Question 2
 
 ```{r}
-# Create plots
+# Wrangle data for plots
 
 plot_data_split <- data_es %>% 
   select(-c(level, hispanic_latino, white)) %>% 
@@ -117,5 +117,21 @@ plot_data_split <- data_es %>%
                         "Grade 8" = 8,
                         "Grade HS (11)" = 11))) %>% 
   split(list(.$academic_year, .$school))
+
+# Create plots 
+
+plot_data_split[["2017-2018.Ashland Middle School"]] %>% 
+  ggplot(aes(grade_level, es, fill = es)) +
+  geom_col(alpha = 0.7) + 
+  coord_flip() + 
+  theme_minimal() +
+  labs(x = "Grade", 
+       y = "Effect Size", 
+       #title = paste("Achievement Gap Estimates:", .$school[1]) +
+       subtitle = "Students coded as White as compared to those coded as Hispanic/Latino", 
+       caption = paste("SCHOOLYEAR", "DISTRICT", "Oregon", sep = ", ")) +
+  geom_hline(yintercept = 0, size = 1.5, color = "#92D5CA", alpha = 0.8) + 
+  scale_fill_viridis_c(limits = c(-1.5, 1.5)) + 
+  theme(legend.position = "bottom")
 ```
 
