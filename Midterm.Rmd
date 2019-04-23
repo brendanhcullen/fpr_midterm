@@ -14,11 +14,10 @@ library(tidyverse)
 library(purrr)
 library(glue)
 library(rio)
+library(janitor)
 ```
 
 # Part A: Data
-
-## Question 1
 
 ```{r}
 # define function to download data
@@ -26,5 +25,21 @@ download_file <- function(year) {
     link <- glue::glue("https://www.oregon.gov/ode/educator-resources/assessment/TestResults20{year}/pagr_schools_ela_raceethnicity_{year-1}{year}.xlsx")
     rio::import(link, setclass = "tibble", na = c("-", "--", "*"))
 }
+```
+
+## Question 1
+
+```{r}
+# download all the data from the past 4 years
+data <- map_df(15:18, download_file) 
+
+# wrangle data
+data <- data %>% 
+  clean_names() %>% 
+  filter(student_group %in% c("White", "Hispanic/Latino")) %>% 
+  gather(c(number_level_1, number_level_2, number_level_3, number_level_4), key = level, value = n) %>%
+  mutate(level = recode(level, "number_level_1" = 1, "number_level_2" = 2, "number_level_3" = 3, "number_level_4" = 4)) %>% 
+  select(academic_year, district, school, student_group, grade_level, level, n) %>% 
+  drop_na(n)
 ```
 
