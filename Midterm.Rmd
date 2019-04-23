@@ -10,6 +10,21 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+library(tidyverse)
+library(purrr)
+library(glue)
+library(rio)
+```
 
+# Part A: Data
+
+## Question 1
+
+```{r}
+# define function to download data
+download_file <- function(year) {
+    link <- glue::glue("https://www.oregon.gov/ode/educator-resources/assessment/TestResults20{year}/pagr_schools_ela_raceethnicity_{year-1}{year}.xlsx")
+    rio::import(link, setclass = "tibble", na = c("-", "--", "*"))
+}
 ```
 
