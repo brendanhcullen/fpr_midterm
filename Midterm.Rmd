@@ -21,7 +21,7 @@ library(colorblindr)
 # Part A: Data
 
 ```{r}
-# define function to download data
+# define function to download data  
 download_file <- function(year) {
     link <- glue::glue("https://www.oregon.gov/ode/educator-resources/assessment/TestResults20{year}/pagr_schools_ela_raceethnicity_{year-1}{year}.xlsx")
     rio::import(link, setclass = "tibble", na = c("-", "--", "*"))
@@ -52,19 +52,19 @@ data <- data %>%
 
 ```{r}
 #  Calculate the cumulative n for each school by student group, grade, and academic year.
+data_cn <- split(data, list(data$school, 
+                            data$academic_year, 
+                            data$student_group, 
+                            data$grade_level), drop = TRUE) %>% 
+          map_df(~mutate(.x, cn = cumsum(n)))
 
-# split the data by the relevant vars
-data_split <- split(data, list(data$school, data$academic_year, data$student_group, data$grade_level), drop = TRUE)
-
-# create cumulative n variable
-data_cn <- map_df(data_split, ~mutate(.x, cn = cumsum(n)))
+data_cn
 ```
 
 ## Question 3
 
 ```{r}
 # Reformat the data 
-
 data_cn <- data_cn %>% 
   select(-n) %>% 
   spread(student_group, cn) %>% 
@@ -78,7 +78,6 @@ data_cn
 
 ```{r}
 # define funtion for later use
-
 gap <- function(data, ref, foc) {
     x <- data[[ref]]
     y <- data[[foc]]
