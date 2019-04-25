@@ -92,7 +92,7 @@ gap <- function(data, ref, foc) {
 ```{r}
 # Estimate an achievement gap effect size for every school in the state that reported data on both student groups (i.e., using the data we created above), for each grade level in each academic year.
 data_es <- data_cn %>% 
-  group_by(school, grade_level, academic_year) %>%
+  group_by(school, district, grade_level, academic_year) %>%
   nest() %>% 
   mutate(es = map_dbl(data, ~gap(.x, ref = "white", foc = "hispanic_latino")))
 ```
@@ -100,10 +100,10 @@ data_es <- data_cn %>%
 ## Question 2
 
 ```{r}
-# Wrangle data for plots
-plot_data_split <- data_es %>% 
-  select(-c(level, hispanic_latino, white)) %>% 
-  distinct() %>% 
+# Reproduce example plot
+
+# Wrangle data for plot
+plot_data <- data_es %>% 
   mutate(grade_level = as.factor(recode(grade_level, 
                         "Grade 3" = 3, 
                         "Grade 4" = 4,
@@ -111,22 +111,91 @@ plot_data_split <- data_es %>%
                         "Grade 6" = 6,
                         "Grade 7" = 7,
                         "Grade 8" = 8,
-                        "Grade HS (11)" = 11))) %>% 
-  split(list(.$academic_year, .$school))
+                        "Grade HS (11)" = 11)),
+         district = map_chr(district, ~str_replace(.x, "SD.*", "School District"))) %>% 
+  filter(school == "Ashland Middle School", academic_year == "2017-2018")
 
-# Create plots 
-plot_data_split[["2017-2018.Ashland Middle School"]] %>% 
+# Reproduce example plot 
+plot_data %>%
   ggplot(aes(grade_level, es, fill = es)) +
   geom_col(alpha = 0.7) + 
   coord_flip() + 
-  theme_minimal() +
   labs(x = "Grade", 
        y = "Effect Size", 
-       #title = paste("Achievement Gap Estimates:", .$school[1]) +
+       title = ("Achievement Gap Estimates: Ashland Middle School"),
        subtitle = "Students coded as White as compared to those coded as Hispanic/Latino", 
-       caption = paste("SCHOOLYEAR", "DISTRICT", "Oregon", sep = ", ")) +
+       caption = paste("2017-2017 School year", "Ashland School Disrict", "Oregon", sep = ", ")) +
   geom_hline(yintercept = 0, size = 1.5, color = "#92D5CA", alpha = 0.8) + 
   scale_fill_viridis_c(limits = c(-1.5, 1.5)) + 
-  theme(legend.position = "bottom")
+  theme_minimal(base_size = 14) +
+  theme(legend.position = c(.7,-.2),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        legend.key.width = unit(3, "cm"),
+        legend.text = element_text(vjust = -.5),
+        plot.margin = unit(c(rep(1.75, 4)), "cm"),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(vjust = -1))
+```
+
+
+```{r}
+# data to loop over
+plot_data <- data_es %>% 
+  mutate(grade_level = as.factor(recode(grade_level, 
+                        "Grade 3" = 3, 
+                        "Grade 4" = 4,
+                        "Grade 5" = 5,
+                        "Grade 6" = 6,
+                        "Grade 7" = 7,
+                        "Grade 8" = 8,
+                        "Grade HS (11)" = 11)),
+         district = map_chr(district, ~str_replace(.x, "SD.*", "School District"))) %>% 
+  select(-data) %>% 
+  group_by(school, district, academic_year) %>% 
+  nest() %>% 
+  slice(1:100)
+
+
+# write function to create plots 
+plot_function <- function(data, school, district, academic_year) {
+  ggplot(data, aes(grade_level, es, fill = es)) +
+  geom_col(alpha = 0.7) + 
+  coord_flip() + 
+  labs(x = "Grade", 
+       y = "Effect Size", 
+       title = glue::glue("Achievement Gap Estimates: {school}"), 
+       subtitle = "Students coded as White as compared to those coded as Hispanic/Latino", 
+       caption = glue::glue("{academic_year} School year, {district}, Oregon")) +
+  geom_hline(yintercept = 0, size = 1.5, color = "#92D5CA", alpha = 0.8) + 
+  scale_fill_viridis_c(limits = c(-1.5, 1.5)) + 
+  theme_minimal(base_size = 14) +
+  theme(legend.position = c(.7,-.2),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        legend.key.width = unit(3, "cm"),
+        legend.text = element_text(vjust = -.5),
+        plot.margin = unit(c(rep(1.75, 4)), "cm"),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(vjust = -1))
+}
+
+# # loop over plot function
+# plots <- plot_data %>% 
+#   pmap(plot_function)
+
+# loop over plot function and save plots as new variable
+plot_data <- plot_data %>% 
+  mutate(plot = pmap(plot_data, plot_function))
+```
+
+## Question 3
+
+```{r}
+# Save the plots into a “plots” directory. Make sure the file names are meaningful.
+
+dir.create(here("plots"))
+
+
 ```
 
