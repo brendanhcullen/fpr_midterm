@@ -16,6 +16,8 @@ library(glue)
 library(rio)
 library(janitor)
 library(colorblindr)
+library(here)
+library(glue)
 ```
 
 # Part A: Data
@@ -140,23 +142,6 @@ plot_data %>%
 
 
 ```{r}
-# data to loop over
-plot_data <- data_es %>% 
-  mutate(grade_level = as.factor(recode(grade_level, 
-                        "Grade 3" = 3, 
-                        "Grade 4" = 4,
-                        "Grade 5" = 5,
-                        "Grade 6" = 6,
-                        "Grade 7" = 7,
-                        "Grade 8" = 8,
-                        "Grade HS (11)" = 11)),
-         district = map_chr(district, ~str_replace(.x, "SD.*", "School District"))) %>% 
-  select(-data) %>% 
-  group_by(school, district, academic_year) %>% 
-  nest() %>% 
-  slice(1:100)
-
-
 # write function to create plots 
 plot_function <- function(data, school, district, academic_year) {
   ggplot(data, aes(grade_level, es, fill = es)) +
@@ -180,13 +165,27 @@ plot_function <- function(data, school, district, academic_year) {
         plot.caption = element_text(vjust = -1))
 }
 
-# # loop over plot function
-# plots <- plot_data %>% 
-#   pmap(plot_function)
+# wrangle data and create plots
+plot_data <- data_es %>% 
+  mutate(grade_level = as.factor(recode(grade_level, 
+                        "Grade 3" = 3, 
+                        "Grade 4" = 4,
+                        "Grade 5" = 5,
+                        "Grade 6" = 6,
+                        "Grade 7" = 7,
+                        "Grade 8" = 8,
+                        "Grade HS (11)" = 11)),
+         district = map_chr(district, ~str_replace(.x, "SD.*", "School District"))) %>% 
+  select(-data) %>% 
+  group_by(school, district, academic_year) %>% 
+  nest() %>% 
+  slice(1:100) %>% 
+  mutate(plot = pmap(list(data, school, district, academic_year), plot_function))
 
-# loop over plot function and save plots as new variable
-plot_data <- plot_data %>% 
-  mutate(plot = pmap(plot_data, plot_function))
+# alternatively, save plots as separate object
+plots <- plot_data %>% 
+  pmap(plot_function)
+
 ```
 
 ## Question 3
@@ -199,15 +198,11 @@ dir.create(here::here("plots"))
 
 # create filenames
 plot_data <- plot_data %>% 
-         mutate(filename = glue::glue(here::here("plots"), "/{school}_{academic_year}.png"))
+         mutate(filename = as.character(glue::glue(here::here("plots"), "/{school}_{academic_year}.png")))
 
 # save files
-plot_data %>% 
-  map(ggsave(filename,
-             plot,
-             device = "png",
-             width = 6.5,
-             height = 8))
-
+walk2(plot_data$filename, plot_data$plot, ggsave,
+      width = 10, 
+      height = 8)
 ```
 
