@@ -1,15 +1,19 @@
 ---
 title: "Midterm"
 author: "Brendan Cullen"
-date: "4/22/2019"
-output: html_document
+date: "4/30/2019"
+output: 
+  html_document:
+      toc: yes
+      toc_depth: 3
+      toc_float: yes
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r message=FALSE}
 library(tidyverse)
 library(purrr)
 library(glue)
@@ -101,7 +105,7 @@ data_es <- data_cn %>%
 
 ## Question 2
 
-```{r}
+```{r eval=FALSE}
 # Reproduce example plot
 
 # Wrangle data for plot
@@ -181,16 +185,11 @@ plot_data <- data_es %>%
   nest() %>% 
   slice(1:100) %>% 
   mutate(plot = pmap(list(data, school, district, academic_year), plot_function))
-
-# alternatively, save plots as separate object
-plots <- plot_data %>% 
-  pmap(plot_function)
-
 ```
 
 ## Question 3
 
-```{r}
+```{r warning=FALSE}
 # Save the plots into a “plots” directory. Make sure the file names are meaningful.
 
 # create directory for plots
