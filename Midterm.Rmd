@@ -52,6 +52,8 @@ data <- data %>%
                         "number_level_4" = 4)) %>% 
   select(academic_year, district, school, student_group, grade_level, level, n) %>% 
   drop_na(n)
+
+data
 ```
 
 ## Question 2
